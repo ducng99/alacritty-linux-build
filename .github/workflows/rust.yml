@@ -1,0 +1,41 @@
+name: Rust
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update rustup
+      run: |
+        rustup override set stable
+        rustup update stable
+
+    - name: Install build deps
+      run: apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
+
+    - name: Get latest stable tag
+      id: stable-tag
+      run: |
+        TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "v\K[^"]*')
+        echo "tag=$TAG" > $GITHUB_OUTPUT
+
+    - uses: actions/checkout@v4
+      with:
+        ref: "{{ steps.stable-tag.outputs.tag }}"
+
+    - name: Build
+      run: cargo build --verbose --release
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3.1.3
+      with:
+        path: target/release/alacritty
