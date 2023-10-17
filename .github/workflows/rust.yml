@@ -1,4 +1,4 @@
-name: Rust
+name: Build
 
 on:
   schedule:
@@ -14,29 +14,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Get latest stable tag
+      id: stable-tag
+      run: |
+        TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
+        LAST_PROCESSED_TAG=$(curl -s "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest" | grep -Po  '"name": "\Kv[^"]*')
+
+        if [ $TAG -ne $LAST_PROCESSED_TAG ]; then
+          echo "should_run=1" > $GITHUB_OUTPUT
+          echo "tag=$TAG" > $GITHUB_OUTPUT
+        fi
+        
+        echo "should_run=0" > $GITHUB_OUTPUT
+
     - name: Update rustup
+      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
       run: |
         rustup override set stable
         rustup update stable
 
     - name: Install build deps
+      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
       run: sudo apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
 
-    - name: Get latest stable tag
-      id: stable-tag
-      run: |
-        TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
-        echo "tag=$TAG" > $GITHUB_OUTPUT
-
     - uses: actions/checkout@v4
+      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
       with:
         repository: alacritty/alacritty
         ref: ${{ steps.stable-tag.outputs.tag }}
 
     - name: Build
+      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
       run: cargo build --verbose --release
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.3
+    - name: Create release
+      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
+      uses: softprops/action-gh-release@v1
       with:
-        path: target/release/alacritty
+        tag_name: ${{ steps.stable-tag.outputs.tag }}
+        body: https://github.com/alacritty/alacritty/releases/tag/${{ steps.stable-tag.outputs.tag }}
+        fail_on_unmatched_files: true
+        files: target/release/alacritty
