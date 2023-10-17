@@ -25,7 +25,7 @@ jobs:
     - name: Get latest stable tag
       id: stable-tag
       run: |
-        TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "v\K[^"]*')
+        TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
         echo "tag=$TAG" > $GITHUB_OUTPUT
 
     - uses: actions/checkout@v4
