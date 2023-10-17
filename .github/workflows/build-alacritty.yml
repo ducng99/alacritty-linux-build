@@ -24,8 +24,9 @@ jobs:
         echo "Last built: $LAST_PROCESSED_TAG"
 
         if [ "$TAG" != "$LAST_PROCESSED_TAG" ]; then
-          echo "should_run=true" > $GITHUB_OUTPUT
-          echo "tag=$TAG" > $GITHUB_OUTPUT
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "New version found"
         fi
 
         echo "should_run=false" > $GITHUB_OUTPUT
