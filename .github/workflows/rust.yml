@@ -20,7 +20,7 @@ jobs:
         rustup update stable
 
     - name: Install build deps
-      run: apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
+      run: sudo apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
 
     - name: Get latest stable tag
       id: stable-tag
