@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get latest stable tag
+      id: stable-tag
+      run: |
+        TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
+        LAST_PROCESSED_TAG=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep -Po  '"name": "\Kv[^"]*')
+
+        echo "Latest build: $TAG"
+        echo "Last built: $LAST_PROCESSED_TAG"
+
+        if [ "$TAG" != "$LAST_PROCESSED_TAG" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "New version found"
+        else
+          echo "should_run=false" > $GITHUB_OUTPUT
+        fi
+
+    - name: Update rustup
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      run: |
+        rustup override set stable
+        rustup update stable
+
+    - name: Install build deps
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      run: sudo apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
+
+    - uses: actions/checkout@v4
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      with:
+        repository: alacritty/alacritty
+        ref: ${{ steps.stable-tag.outputs.tag }}
+
+    - name: Build
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      run: cargo build --verbose --release
+
+    - name: Create release
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.stable-tag.outputs.tag }}
+        body: https://github.com/alacritty/alacritty/releases/tag/${{ steps.stable-tag.outputs.tag }}
+        fail_on_unmatched_files: true
+        files: target/release/alacritty
