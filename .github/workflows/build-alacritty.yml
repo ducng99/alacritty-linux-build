@@ -24,34 +24,34 @@ jobs:
         echo "Last built: $LAST_PROCESSED_TAG"
 
         if [ $TAG -ne $LAST_PROCESSED_TAG ]; then
-          echo "should_run=1" > $GITHUB_OUTPUT
+          echo "should_run=true" > $GITHUB_OUTPUT
           echo "tag=$TAG" > $GITHUB_OUTPUT
         fi
 
-        echo "should_run=0" > $GITHUB_OUTPUT
+        echo "should_run=false" > $GITHUB_OUTPUT
 
     - name: Update rustup
-      if: steps.stable-tag.outputs.should_run == "1"
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
       run: |
         rustup override set stable
         rustup update stable
 
     - name: Install build deps
-      if: steps.stable-tag.outputs.should_run == "1"
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
       run: sudo apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
 
     - uses: actions/checkout@v4
-      if: steps.stable-tag.outputs.should_run == "1"
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
       with:
         repository: alacritty/alacritty
         ref: ${{ steps.stable-tag.outputs.tag }}
 
     - name: Build
-      if: steps.stable-tag.outputs.should_run == "1"
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
       run: cargo build --verbose --release
 
     - name: Create release
-      if: steps.stable-tag.outputs.should_run == "1"
+      if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.stable-tag.outputs.tag }}
