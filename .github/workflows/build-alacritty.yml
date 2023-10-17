@@ -20,6 +20,9 @@ jobs:
         TAG=$(curl -s "https://api.github.com/repos/alacritty/alacritty/releases/latest" | grep -Po  '"tag_name": "\Kv[^"]*')
         LAST_PROCESSED_TAG=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep -Po  '"name": "\Kv[^"]*')
 
+        echo "Latest build: $TAG"
+        echo "Last built: $LAST_PROCESSED_TAG"
+
         if [ $TAG -ne $LAST_PROCESSED_TAG ]; then
           echo "should_run=1" > $GITHUB_OUTPUT
           echo "tag=$TAG" > $GITHUB_OUTPUT
@@ -28,27 +31,27 @@ jobs:
         echo "should_run=0" > $GITHUB_OUTPUT
 
     - name: Update rustup
-      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
+      if: steps.stable-tag.outputs.should_run == "1"
       run: |
         rustup override set stable
         rustup update stable
 
     - name: Install build deps
-      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
+      if: steps.stable-tag.outputs.should_run == "1"
       run: sudo apt-get install cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
 
     - uses: actions/checkout@v4
-      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
+      if: steps.stable-tag.outputs.should_run == "1"
       with:
         repository: alacritty/alacritty
         ref: ${{ steps.stable-tag.outputs.tag }}
 
     - name: Build
-      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
+      if: steps.stable-tag.outputs.should_run == "1"
       run: cargo build --verbose --release
 
     - name: Create release
-      if: ${{ steps.stable-tag.outputs.should_run }} == "1"
+      if: steps.stable-tag.outputs.should_run == "1"
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.stable-tag.outputs.tag }}
