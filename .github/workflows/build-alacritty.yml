@@ -27,9 +27,9 @@ jobs:
           echo "should_run=true" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "New version found"
+        else
+          echo "should_run=false" > $GITHUB_OUTPUT
         fi
-
-        echo "should_run=false" > $GITHUB_OUTPUT
 
     - name: Update rustup
       if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
