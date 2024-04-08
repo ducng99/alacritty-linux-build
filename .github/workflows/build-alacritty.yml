@@ -56,7 +56,7 @@ jobs:
 
     - name: Create release
       if: ${{ steps.stable-tag.outputs.should_run == 'true' }}
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.stable-tag.outputs.tag }}
         body: https://github.com/alacritty/alacritty/releases/tag/${{ steps.stable-tag.outputs.tag }}
